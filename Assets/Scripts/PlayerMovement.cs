@@ -1,40 +1,40 @@
+using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
+using UnityEngine.EventSystems;
 
 public class PlayerMovement : MonoBehaviour
 {
-    public float moveSpeed = 5f; // Movement speed of the player
-    public Transform cameraTransform; // Reference to the camera's transform
-    private float angle; // Initialize angle variable
 
+    public float moveSpeed;
+    public float jumpForce;
+    public CharacterController controller;
+    private Vector3 moveDirection;
+    public float gravityScale;
+
+    // Start is called before the first frame update
+    void Start()
+    {
+        controller = GetComponent<CharacterController>();
+    }
+
+    // Update is called once per frame
     void Update()
     {
-        // Get input from the user
-        float horizontalInput = Input.GetAxis("Horizontal"); // A/D or Left/Right Arrow
-        float verticalInput = Input.GetAxis("Vertical"); // W/S or Up/Down Arrow
+        //moveDirection = new Vector3(Input.GetAxis("Horizontal") * moveSpeed, moveDirection.y, Input.GetAxis("Vertical") * moveSpeed);
+        float yStore = moveDirection.y;
+        moveDirection = (transform.forward * Input.GetAxis("Vertical")) + (transform.right * Input.GetAxis("Horizontal"));
+        moveDirection = moveDirection.normalized * moveSpeed;
+        moveDirection.y = yStore;
 
-        // Calculate movement direction relative to the camera
-        Vector3 forward = cameraTransform.forward; // Get the camera's forward vector
-        Vector3 right = cameraTransform.right; // Get the camera's right vector
-
-        forward.y = 0; // Ensure the forward vector is flat (ignore vertical component)
-        right.y = 0; // Ensure the right vector is flat (ignore vertical component)
-
-        forward.Normalize(); // Normalize the forward vector
-        right.Normalize(); // Normalize the right vector
-
-        // Calculate the movement direction
-        Vector3 moveDirection = (forward * verticalInput + right * horizontalInput).normalized;
-
-        // Move the player
-        if (moveDirection.magnitude >= 0.1f)
-        {
-            // Calculate the angle to rotate towards
-            float targetAngle = Mathf.Atan2(moveDirection.x, moveDirection.z) * Mathf.Rad2Deg; // Convert to degrees
-            angle = Mathf.SmoothDampAngle(transform.eulerAngles.y, targetAngle, ref angle, 0.1f); // Smoothly rotate towards the target angle
-            transform.rotation = Quaternion.Euler(0, angle, 0); // Rotate the player
-
-            // Move in the forward direction
-            transform.position += moveDirection * moveSpeed * Time.deltaTime; // Move the player
+        if(controller.isGrounded){
+            moveDirection.y = 0f;
+            if(Input.GetButtonDown("Jump")){
+                moveDirection.y = jumpForce;
+            }
         }
+        moveDirection.y = moveDirection.y + (Physics.gravity.y * gravityScale * Time.deltaTime);
+        controller.Move(moveDirection * Time.deltaTime);
     }
+
 }
